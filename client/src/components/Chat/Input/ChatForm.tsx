@@ -95,6 +95,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     () => (chatDirection != null ? chatDirection?.toLowerCase() === 'rtl' : false),
     [chatDirection],
   );
+  
   const invalidAssistant = useMemo(
     () =>
       isAssistantsEndpoint(endpoint) &&
@@ -102,6 +103,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
         !assistantMap?.[endpoint ?? '']?.[conversation?.assistant_id ?? '']),
     [conversation?.assistant_id, endpoint, assistantMap],
   );
+
   const disableInputs = useMemo(
     () => requiresKey || invalidAssistant,
     [requiresKey, invalidAssistant],

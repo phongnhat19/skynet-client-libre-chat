@@ -7,7 +7,7 @@ const connect = require('./connect');
 const listUsers = async () => {
   try {
     await connect();
-    const users = await User.find({}, 'email provider avatar username name createdAt');
+    const users = await User.find({}, 'email provider avatar username name role createdAt');
 
     console.log('\nUser List:');
     console.log('----------------------------------------');
@@ -16,6 +16,7 @@ const listUsers = async () => {
       console.log(`Email: ${user.email}`);
       console.log(`Username: ${user.username || 'N/A'}`);
       console.log(`Name: ${user.name || 'N/A'}`);
+      console.log(`Role: ${user.role || 'N/A'}`);
       console.log(`Provider: ${user.provider || 'email'}`);
       console.log(`Created: ${user.createdAt}`);
       console.log('----------------------------------------');

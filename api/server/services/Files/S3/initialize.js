@@ -26,6 +26,8 @@ const initializeS3 = () => {
 
   // Read the custom endpoint if provided.
   const endpoint = process.env.AWS_ENDPOINT_URL;
+  const forcePathStyle = process.env.AWS_S3_FORCE_PATH_STYLE === 'true';
+  const tlsEnabled = process.env.AWS_S3_TLS === 'false' ? false : true;
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
@@ -33,6 +35,8 @@ const initializeS3 = () => {
     region,
     // Conditionally add the endpoint if it is provided
     ...(endpoint ? { endpoint } : {}),
+    forcePathStyle,
+    tls: tlsEnabled,
   };
 
   if (accessKeyId && secretAccessKey) {

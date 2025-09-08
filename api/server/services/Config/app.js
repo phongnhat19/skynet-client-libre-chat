@@ -5,6 +5,30 @@ const { setCachedTools } = require('./getCachedTools');
 const getLogStores = require('~/cache/getLogStores');
 
 /**
+ * Apply simple role-based overrides to the AppConfig
+ * @param {AppConfig} baseConfig
+ * @param {string} role
+ * @returns {Promise<AppConfig>} role-modified config
+ */
+async function applyRoleBasedConfig(baseConfig, role) {
+  try {
+    if (typeof role === 'string' && role.toLowerCase() === 'admin') {
+      return {
+        ...baseConfig,
+        interfaceConfig: {
+          ...baseConfig.interfaceConfig,
+          sidePanel: true,
+        },
+      };
+    }
+    return baseConfig;
+  } catch (_err) {
+    // Fallback to base config on any unexpected error
+    return baseConfig;
+  }
+}
+
+/**
  * Get the app configuration based on user context
  * @param {Object} [options]
  * @param {string} [options.role] - User role for role-based config
@@ -43,10 +67,10 @@ async function getAppConfig(options = {}) {
   // For now, return the base config
   // In the future, this is where we'll apply role-based modifications
   if (role) {
-    // TODO: Apply role-based config modifications
-    // const roleConfig = await applyRoleBasedConfig(baseConfig, role);
-    // await cache.set(cacheKey, roleConfig);
-    // return roleConfig;
+    // Apply role-based config modifications
+    const roleConfig = await applyRoleBasedConfig(baseConfig, role);
+    await cache.set(cacheKey, roleConfig);
+    return roleConfig;
   }
 
   return baseConfig;

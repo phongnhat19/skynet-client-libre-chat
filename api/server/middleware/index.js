@@ -23,6 +23,7 @@ const uaParser = require('./uaParser');
 const checkBan = require('./checkBan');
 const noIndex = require('./noIndex');
 const roles = require('./roles');
+const optionalJwtAuth = require('./optionalJwtAuth');
 
 module.exports = {
   ...abortMiddleware,
@@ -50,4 +51,5 @@ module.exports = {
   buildEndpointOption,
   validateRegistration,
   validatePasswordReset,
+  optionalJwtAuth
 };

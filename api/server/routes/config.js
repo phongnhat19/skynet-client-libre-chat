@@ -9,6 +9,7 @@ const {
 } = require('librechat-data-provider');
 const { getLdapConfig } = require('~/server/services/Config/ldap');
 const { getAppConfig } = require('~/server/services/Config/app');
+const { optionalJwtAuth } = require('~/server/middleware');
 const { getProjectByName } = require('~/models/Project');
 const { getMCPManager } = require('~/config');
 const { getLogStores } = require('~/cache');
@@ -29,10 +30,12 @@ const publicSharedLinksEnabled =
 const sharePointFilePickerEnabled = isEnabled(process.env.ENABLE_SHAREPOINT_FILEPICKER);
 const openidReuseTokens = isEnabled(process.env.OPENID_REUSE_TOKENS);
 
-router.get('/', async function (req, res) {
+router.get('/', optionalJwtAuth, async function (req, res) {
   const cache = getLogStores(CacheKeys.CONFIG_STORE);
 
-  const cachedStartupConfig = await cache.get(CacheKeys.STARTUP_CONFIG);
+  const roleKey = req.user?.role || 'ANON';
+  const startupCacheKey = `${CacheKeys.STARTUP_CONFIG}:${roleKey}`;
+  const cachedStartupConfig = await cache.get(startupCacheKey);
   if (cachedStartupConfig) {
     res.send(cachedStartupConfig);
     return;
@@ -180,7 +183,7 @@ router.get('/', async function (req, res) {
       payload.customFooter = process.env.CUSTOM_FOOTER;
     }
 
-    await cache.set(CacheKeys.STARTUP_CONFIG, payload);
+    await cache.set(startupCacheKey, payload);
     return res.status(200).send(payload);
   } catch (err) {
     logger.error('Error in startup config', err);

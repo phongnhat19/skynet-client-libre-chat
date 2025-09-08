@@ -250,15 +250,33 @@ function extractKeyFromS3Url(fileUrlOrKey) {
 
   try {
     const url = new URL(fileUrlOrKey);
-    return url.pathname.substring(1);
-  } catch (error) {
-    const parts = fileUrlOrKey.split('/');
+    // Normalize leading slash
+    let path = url.pathname.replace(/^\/+/, '');
 
-    if (parts.length >= 3 && !fileUrlOrKey.startsWith('http') && !fileUrlOrKey.startsWith('/')) {
-      return fileUrlOrKey;
+    // If the path includes the bucket (path-style URLs), strip everything up to and including "<bucket>/"
+    // This handles endpoints like: /storage/v1/s3/<bucket>/<key> or /<bucket>/<key>
+    if (bucketName) {
+      const bucketPrefixIndex = path.indexOf(`${bucketName}/`);
+      if (bucketPrefixIndex !== -1) {
+        path = path.slice(bucketPrefixIndex + bucketName.length + 1);
+      }
     }
 
-    return fileUrlOrKey.startsWith('/') ? fileUrlOrKey.substring(1) : fileUrlOrKey;
+    return path;
+  } catch (error) {
+    // Not a URL; treat as a key or a path that may still contain bucket and/or endpoint prefixes
+    let key = fileUrlOrKey.replace(/^\/+/, '');
+
+    // If it starts with the bucket (or endpoint path + bucket), strip up to and including "<bucket>/"
+    if (bucketName) {
+      const idx = key.indexOf(`${bucketName}/`);
+      if (idx !== -1) {
+        return key.slice(idx + bucketName.length + 1);
+      }
+    }
+
+    // Otherwise, return as-is
+    return key;
   }
 }
 
