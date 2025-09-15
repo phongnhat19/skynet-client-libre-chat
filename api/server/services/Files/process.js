@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const mime = require('mime');
 const { v4 } = require('uuid');
 const {
@@ -512,9 +513,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
     throw new Error('No tool resource provided for agent file upload');
   }
 
-  if (tool_resource === EToolResources.file_search && file.mimetype.startsWith('image')) {
-    throw new Error('Image uploads are not supported for file search tool resources');
-  }
+  // Allow image uploads for file_search; images will be auto-processed via OCR prior to embedding
 
   let messageAttachment = !!metadata.message_file;
   if (!messageAttachment && !agent_id) {
@@ -652,13 +651,57 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
 
     // SECOND: Upload to Vector DB
     const { uploadVectors } = require('./VectorDB/crud');
+    const fileConfig = mergeFileConfig(appConfig.fileConfig);
+    const shouldUseOCR = fileConfig.checkType(
+      file.mimetype,
+      fileConfig.ocr?.supportedMimeTypes || [],
+    );
 
-    embeddingResult = await uploadVectors({
-      req,
-      file,
-      file_id,
-      entity_id,
-    });
+    let tempOCRPath = null;
+    try {
+      let fileForEmbedding = file;
+      if (shouldUseOCR) {
+        const isOCREnabled = await checkCapability(req, AgentCapabilities.ocr);
+        if (!isOCREnabled) {
+          throw new Error('OCR capability is not enabled for Agents');
+        }
+
+        const { handleFileUpload: uploadOCR } = getStrategyFunctions(
+          appConfig?.ocr?.strategy ?? FileSources.mistral_ocr,
+        );
+        const { text } = await uploadOCR({ req, file, loadAuthValues });
+
+        // Create a temporary text file for embedding into the Vector DB
+        const ocrFilename = `${path.basename(
+          file.originalname,
+          path.extname(file.originalname),
+        )}.txt`;
+        tempOCRPath = path.join(os.tmpdir(), `${file_id}-ocr.txt`);
+        await fs.promises.writeFile(tempOCRPath, text, 'utf8');
+
+        fileForEmbedding = {
+          path: tempOCRPath,
+          originalname: ocrFilename,
+          mimetype: 'text/plain',
+          size: Buffer.byteLength(text, 'utf8'),
+        };
+      }
+
+      embeddingResult = await uploadVectors({
+        req,
+        file: fileForEmbedding,
+        file_id,
+        entity_id,
+      });
+    } finally {
+      if (tempOCRPath) {
+        try {
+          await fs.promises.unlink(tempOCRPath);
+        } catch (e) {
+          // ignore cleanup errors
+        }
+      }
+    }
 
     // Vector status will be stored at root level, no need for metadata
     fileInfoMetadata = {};
@@ -694,7 +737,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
     });
   }
 
-  if (isImage) {
+  if (isImage && tool_resource !== EToolResources.file_search) {
     const result = await processImageFile({
       req,
       file,

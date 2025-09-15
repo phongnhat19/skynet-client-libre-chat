@@ -192,5 +192,13 @@
         "description": "Provide your Flux API key from your user profile."
       }
     ]
+  },
+  {
+    "name": "ABBYY PDF to Docx",
+    "pluginKey": "abbyy_pdf_to_docx",
+    "description": "Generate a DOCX file from a PDF file using ABBYY Cloud OCR SDK.",
+    "icon": "https://www.abbyy.com/favicon.ico",
+    "isAuthRequired": "false",
+    "authConfig": []
   }
 ]

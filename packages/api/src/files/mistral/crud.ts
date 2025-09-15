@@ -48,6 +48,7 @@ interface OCRContext {
     userId: string;
     authFields: string[];
     optional?: Set<string>;
+    throwError?: boolean;
   }) => Promise<Record<string, string | undefined>>;
 }
 
@@ -260,6 +261,7 @@ async function loadAuthConfig(context: OCRContext): Promise<AuthConfig> {
     userId: context.req.user?.id || '',
     authFields,
     optional: new Set(['OCR_BASEURL']),
+    throwError: false,
   });
 
   const apiKey = await resolveConfigValue(apiKeyConfig, 'OCR_API_KEY', authValues);
