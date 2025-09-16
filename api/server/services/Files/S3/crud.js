@@ -14,7 +14,7 @@ const { logger } = require('~/config');
 const bucketName = process.env.AWS_BUCKET_NAME;
 const defaultBasePath = 'images';
 
-let s3UrlExpirySeconds = 2 * 60; // 2 minutes
+let s3UrlExpirySeconds = 10 * 60; // 10 minutes
 let s3RefreshExpiryMs = null;
 
 if (process.env.S3_URL_EXPIRY_SECONDS !== undefined) {
@@ -101,6 +101,8 @@ async function getS3URL({
   if (contentType) {
     params.ResponseContentType = contentType;
   }
+
+  console.log('getS3URL params', params);
 
   try {
     const s3 = initializeS3();

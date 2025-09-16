@@ -248,6 +248,7 @@ const loadTools = async ({
     dalle: imageGenOptions,
     'stable-diffusion': imageGenOptions,
     serpapi: { location: 'Austin,Texas,United States', hl: 'en', gl: 'us' },
+    abbyy_pdf_to_docx: { req: options.req },
   };
 
   /** @type {Record<string, string>} */
